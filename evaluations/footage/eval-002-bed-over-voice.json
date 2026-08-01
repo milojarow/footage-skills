@@ -1,0 +1,16 @@
+{
+  "id": "footage-002",
+  "skills": ["footage"],
+  "query": "I added a music bed under my talking-head video at the volume the docs recommended and now the music is louder than me. What went wrong?",
+  "expected_behavior": [
+    "activate the footage skill",
+    "explain that published defaults assume a normalized voiceover around -16 LUFS while raw footage can sit near -26",
+    "give the ebur128 command to measure both",
+    "derive the gain from the measured difference instead of suggesting a new fixed number",
+    "warn that raising the voice later invalidates every derived gain",
+    "route to reference/audio-levels.md"
+  ],
+  "expected_content": ["LUFS", "ebur128", "derive", "audio-levels.md"],
+  "priority": "high",
+  "notes": "A default of 0.30 put the bed on top of a -26 LUFS phone take."
+}

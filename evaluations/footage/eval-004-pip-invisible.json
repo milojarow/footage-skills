@@ -1,0 +1,15 @@
+{
+  "id": "footage-004",
+  "skills": ["footage"],
+  "query": "I want the speaker to shrink to a small square in the corner while a terminal takes the full frame. I animated the wrapper's left/top/width/height but the person disappears entirely and the motion stutters.",
+  "expected_behavior": [
+    "activate the footage skill",
+    "identify the opaque full-canvas card on a higher track as the reason the video is hidden, and prescribe a z-index lift on the video wrapper",
+    "identify layout-property animation as the stutter, and prescribe scale/x/y transforms",
+    "explain that uniform scale cannot make a square from 9:16 without squashing, so clip first and scale second",
+    "route to reference/overlays-and-pip.md"
+  ],
+  "expected_content": ["z-index", "transform", "clip-path", "overlays-and-pip.md"],
+  "priority": "high",
+  "notes": "Two independent defects in one move; the snapshot showed a perfect graphic and no person."
+}

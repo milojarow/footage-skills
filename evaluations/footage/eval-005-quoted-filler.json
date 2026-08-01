@@ -1,0 +1,16 @@
+{
+  "id": "footage-005",
+  "skills": ["footage"],
+  "query": "Cut the filler words out of my Spanish take automatically — este, pues, eh, all of them.",
+  "expected_behavior": [
+    "activate the footage skill",
+    "warn that este, pues and bueno are real Spanish words and must not be cut blind",
+    "note that provider default filler removal is English-only, so Spanish fillers are never stripped automatically",
+    "explain the counter-intuitive setting: filler words must be REQUESTED in the transcript or they have no timestamps to cut on",
+    "require a dry run that prints which tokens matched before rendering",
+    "route to reference/cut-and-transcript.md"
+  ],
+  "expected_content": ["este", "dry", "timestamps", "cut-and-transcript.md"],
+  "priority": "high",
+  "notes": "A speaker quoting a filler had that token cut, breaking the sentence."
+}

@@ -1,0 +1,15 @@
+{
+  "id": "footage-001",
+  "skills": ["footage"],
+  "query": "My rendered short came out with no sound at all. The composition lints clean and the render exited 0. What do I check?",
+  "expected_behavior": [
+    "activate the footage skill",
+    "name the missing id on timed <audio> elements as the first suspect",
+    "explain that the renderer discovers media by id, so an element with data-start but no id is never played",
+    "suggest verifying presence after render by band-energy comparison rather than phase cancellation",
+    "route to reference/silent-failures.md"
+  ],
+  "expected_content": ["id", "audio", "silent", "silent-failures.md"],
+  "priority": "high",
+  "notes": "Measured on a real run: 14 SFX would have shipped silent. Lint caught it only because the renderer ships that specific rule."
+}

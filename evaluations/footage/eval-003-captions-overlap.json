@@ -1,0 +1,16 @@
+{
+  "id": "footage-003",
+  "skills": ["footage"],
+  "query": "My karaoke captions look garbled — words run together and sometimes two lines seem printed on top of each other. Timings come straight from the transcript.",
+  "expected_behavior": [
+    "activate the footage skill",
+    "identify two separate causes: overlapping caption windows, and the active-word scale eating the inter-word gap",
+    "state that captions are a single slot and windows must be strictly sequential, one frame apart",
+    "warn that alternating tracks silences the lint warning without fixing the picture",
+    "prescribe per-word padding so the scale grows into padding, not the neighbour",
+    "route to reference/captions-karaoke.md"
+  ],
+  "expected_content": ["sequential", "padding", "scale", "captions-karaoke.md"],
+  "priority": "high",
+  "notes": "Both defects shipped on the same run and neither raised an error."
+}

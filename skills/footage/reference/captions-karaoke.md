@@ -3,6 +3,20 @@
 Word-level timestamps are the whole game. An `.srt` collapses words into blocks and throws the
 granularity away, so keep the word array as the source of truth and treat `.srt` as an export.
 
+## Start here — route by symptom
+
+| What you see | Section |
+|---|---|
+| Two lines printed over each other | [Windows must be strictly sequential](#windows-must-be-strictly-sequential) |
+| Words running together (`terminalcorriendo`) | [The karaoke mechanic](#the-karaoke-mechanic) |
+| A flicker on very short words | [The karaoke mechanic](#the-karaoke-mechanic) |
+| Captions drift further from the audio the longer it plays | [Remap to the cut timeline first](#remap-to-the-cut-timeline-first) |
+| Captions unreadable over a bright background | [Placement](#placement) |
+| A caption stays on screen after a seek | [Hard-kill every exit](#hard-kill-every-exit) |
+
+**Drift is the only symptom the remap section explains.** Garbling and overlap are layout
+problems, not timing problems — do not chase the remap for those.
+
 ## Remap to the cut timeline first
 
 After the cut, original timings are wrong. Map every word onto the new timeline before writing

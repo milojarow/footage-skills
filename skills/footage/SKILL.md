@@ -19,7 +19,7 @@ Four tools, each doing only what it is best at:
 | **Cut** | `ffmpeg` | Destructive edits on real pixels. Frame-accurate trim + concat |
 | **Hear** | Speech-to-text with **word-level timestamps** | Every downstream stage is keyed to word timings |
 | **Draw** | HyperFrames | HTML→video. Captions, overlays, PIP live in one composition, one encode |
-| **Sound** | A TTS/music/SFX provider + a bundled SFX library | Bed and one-shots under the voice |
+| **Sound** | A music/SFX source — generated, catalogued, or a bundled library | Bed and one-shots under the voice |
 
 **The through-line: one transcript feeds everything.** The cut list, the captions, the card
 timings and the graphic cues all derive from the same word array. Transcribe once.
@@ -101,7 +101,21 @@ what the first pass already put on screen.
 Layout, zones, the PIP transform math and the collision rules: [reference/overlays-and-pip.md](reference/overlays-and-pip.md).
 Caption windows, word spacing and the karaoke mechanic: [reference/captions-karaoke.md](reference/captions-karaoke.md).
 
-### 6 — Mix by measurement
+### 6 — Source the sound, then mix by measurement
+
+Two kinds of asset, sourced differently:
+
+- **Bed** — one instrumental track, slightly longer than the piece so the composition can trim
+  the tail rather than run out. Generating one from a mood prompt costs cents and beats hunting
+  a catalogue; ask for **instrumental only**, since vocals fight the voice.
+- **One-shots** — transitions, impacts, ticks. A curated library beats generation here: you want
+  a whoosh that sounds like every other whoosh in the piece. Composition frameworks often ship a
+  small bundled set; if not, any royalty-free pack works.
+
+Whatever the source, **normalize every asset to a common loudness floor before computing any
+gain** — see below.
+
+### Mix by measurement
 
 Never pick audio levels by feel. Measure the voice, measure each asset, and **derive** every
 gain from the difference. A tutorial default assumes a normalized voiceover; a phone recording
@@ -140,7 +154,7 @@ card is readable for half a second and reads as a glitch, not a design.
 
 One element every ~3 seconds of runtime is a reasonable target for a fast social short. Below
 that the piece reads as a plain talking head with a few decorations. Count them before
-rendering — a 57-second piece with 9 elements has long bare stretches; the same piece with 18
+rendering — a ~1-minute piece with 9 elements has long bare stretches; the same piece with 18
 feels designed.
 
 **One deliberate exception: leave the closing line bare.** After a dense sequence, dropping

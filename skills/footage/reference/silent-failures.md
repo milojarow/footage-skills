@@ -22,7 +22,17 @@ appears in the DOM, it validates, and it produces nothing.
 ```
 
 **Catch it:** lint for it if your renderer offers the rule; otherwise grep that every `<audio>`
-with `data-start` also has `id`. Confirm after render by measuring band energy (see §5).
+with `data-start` also has `id`.
+
+**Confirm after render** — for *"is there any audio at all"*, measure the whole file. A fully
+mute track reads `-inf`:
+
+```bash
+ffmpeg -hide_banner -nostats -i final.mp4 -af ebur128 -f null - 2>&1 | grep -E '^\s+I:'
+```
+
+That is a different question from *"did the music bed land"*, which needs the band-energy
+comparison in §5 — do not substitute one for the other.
 
 ---
 

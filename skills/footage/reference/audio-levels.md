@@ -15,7 +15,7 @@ A real spread from one production:
 
 | Source | Integrated |
 |---|---|
-| Voice (phone selfie take) | **−26.1 LUFS** |
+| Voice, as muxed in the source video | **−26.1 LUFS** |
 | Music bed (generated, mastered) | −15.7 LUFS |
 | SFX: impact | **−4.5 LUFS** |
 | SFX: keypress | **−36.3 LUFS** |
@@ -73,6 +73,10 @@ Two operations, in this order:
 2. **Normalize** — `loudnorm=I=-16:TP=-1.5:LRA=11`.
 
 Measured effect of isolation on one phone take:
+
+Measured on the audio **extracted to mono MP3** — hence −26.6 here against the −26.1 the
+same voice measures inside the container. Both are the same take; the extraction and the
+re-encode account for the 0.5 LU.
 
 | | Before | After |
 |---|---|---|

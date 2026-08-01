@@ -3,6 +3,10 @@
 The composition is one HTML document: the footage plays underneath, graphics sit on tracks
 above it, and one render produces the finished file.
 
+> **REQUIRED BACKGROUND:** this file assumes the HyperFrames composition contract —
+> `data-start` / `data-duration`, `class="clip"`, tracks, the paused master timeline. Read
+> `hyperframes-core` first if those are unfamiliar; nothing here re-teaches them.
+
 ## Design from a frame, not from a template
 
 Before choosing any position, extract frames across the take and look at them.
@@ -31,8 +35,8 @@ Panels and captions both want the chest. Panels go above, captions below, and ne
 ## Element budget
 
 Aim for **one element every ~3 seconds**. Fewer and the piece reads as a plain talking head;
-the difference between 9 elements and 18 across a minute is the difference between "decorated"
-and "designed".
+the difference between 9 elements and 18 across a ~1-minute piece is the difference between
+"decorated" and "designed".
 
 Mix the registers so it does not read as one repeated card:
 
@@ -54,8 +58,12 @@ duration, and check the shortest element before rendering.
 
 ## Tracks
 
-Give each register its own track so intentional overlaps are possible without tripping the
-same-track overlap rule:
+**Track number is both z-order and the overlap namespace.** A higher `data-track-index` paints
+*above* a lower one — which is why a full-frame card on track 2 covers the video on track 1, and
+why the PIP below needs an explicit `z-index` to climb back over it. Two elements on the same
+track must not overlap in time; different tracks may.
+
+Give each register its own track:
 
 ```
 1   video          10  program audio      11  music bed
@@ -63,7 +71,76 @@ same-track overlap rule:
 6   info panels    20+ SFX one-shots
 ```
 
-Two elements on the **same** track must not overlap in time. Different tracks may.
+## The three registers that are not PIP
+
+PIP gets the long treatment below because its geometry is non-obvious. These three are simpler
+but still need to be right.
+
+### Corner chip — a persistent section marker
+
+Sits in the wall band above the head, never moves, one per section.
+
+```css
+.chip {
+  position: absolute; left: 48px; top: 52px;
+  display: flex; align-items: center; gap: 18px;
+  padding: 16px 28px 16px 20px;
+  background: rgba(13,17,23,.82);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 18px 46px -14px rgba(0,0,0,.7);
+}
+.chip .num { font: 700 56px/1 ui-monospace, monospace; color: var(--accent); }
+.chip .lbl { font: 700 30px 'Inter', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+```
+
+Enter with a short stagger — number, then label, then an underline growing to a fixed width:
+
+```js
+tl.from(`${sel} .num`, { opacity: 0, y: 14, duration: 0.28 }, t + 0.08);
+tl.from(`${sel} .lbl`, { opacity: 0, x: -18, duration: 0.30 }, t + 0.18);
+tl.fromTo(`${sel} .bar`, { width: 0 }, { width: 300, duration: 0.45 }, t + 0.26);
+```
+
+### Info panel — a list, a table, a stat
+
+Lives in the chest band, above the captions. One accent stripe on the left ties it to the
+section's colour.
+
+```css
+.panel {
+  position: absolute; left: 56px; right: 56px; top: 1088px;
+  background: rgba(13,17,23,.90);
+  border: 2px solid #2c333e; border-left: 8px solid var(--accent);
+  border-radius: 16px; padding: 30px 36px;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.8);
+}
+.panel .kicker { font: 700 22px 'Inter'; letter-spacing: .22em; text-transform: uppercase; color: #7d8590; }
+.panel .row { opacity: 0; }        /* ← animate with fromTo, never from */
+```
+
+Rows enter staggered, ~0.22–0.28 s apart. **Rows that start hidden in CSS must be animated with
+`fromTo`** — see [silent-failures.md](silent-failures.md) §2.
+
+A stat panel reveals in stages rather than all at once: the old value, the arrow, the new value,
+then a counter. Any element whose text is written by a counter's `onUpdate` must **start at
+`opacity: 0`** — otherwise its literal HTML text shows until the tween begins.
+
+```js
+(function () {
+  const o = { v: 0 };
+  tl.to(o, { v: -22, duration: 0.85, ease: 'power2.out', onUpdate() {
+    document.querySelector('#pct').textContent = Math.round(o.v) + '%';
+  }}, t + 1.15);
+})();
+tl.to('#pct', { opacity: 1, duration: 0.22 }, t + 1.05);   // reveal as it starts counting
+```
+
+### Recap — everything so far, once
+
+Near the end, stack the sections as rows with their own accent colours, entering ~0.16 s apart.
+Give it a dim over the footage: a recap covers the speaker's face by design, and without the dim
+the rows fight the background. Keep it to one appearance — a recap that repeats is a list.
 
 ## The PIP move
 

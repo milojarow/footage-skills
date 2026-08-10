@@ -105,6 +105,70 @@ minute. Visible desync starts around 80 ms.
 Clones are for audio the camera never saw: an intro, an outro, a corrected line over a graphic,
 a translated version. Not for re-voicing a shot where the mouth is visible.
 
+## Broadband RMS lies about a tonal element over a noise bed
+
+The lie always pushes you to add gain you should not add.
+
+A brand sting (three rising notes plus a chord) mixed over a park-ambience tail, measured in
+broadband RMS by windows — which is what one measures:
+
+| Window | Broadband RMS |
+|---|---|
+| Ambience alone | −31.5 dBFS |
+| The three notes | −30.0 dBFS — only +1.5 dB |
+| The chord | −23.9 dBFS |
+
+Read that way the notes are **buried**: a decibel and a half over the noise floor is nothing,
+and the obvious reflex is to turn the sting up. It is false. The same measurement split by band:
+
+| Band (Hz) | Ambience | Notes | Difference |
+|---|---|---|---|
+| 60–250 | −43.2 | −34.7 | +8.5 |
+| 250–700 | −50.0 | −34.0 | **+16.1** ← the fundamentals |
+| 700–1500 | −52.6 | −40.5 | +12.1 |
+| 1500–3500 | −48.8 | −41.8 | +7.1 |
+| 3500–8000 | −53.4 | −45.3 | +8.1 |
+
+The notes win **+16 dB where they actually live** and +7 to +12 dB everywhere else. They are
+perfectly audible. Adding gain would have made the sting shout over a voice that had just
+finished speaking.
+
+**Why it lies:** broadband RMS sums the whole spectrum into one number. A **tonal** element
+concentrates its energy in a few narrow bands; a **noise** bed spreads it across all of them.
+Compared with a single number, the noise accumulates energy from fifty bands where the note
+contributes in three — so the number under-represents exactly what the ear separates, because
+the ear does not average: it listens in critical bands.
+
+This is one case of a general trap: **an average over a dimension the destination system does
+not average does not describe that system.**
+
+### Measure by band instead
+
+Before touching the gain of a tonal element over a noise bed — sting, bell, synth line, a cue
+over traffic or rain:
+
+```python
+def band_rms(a, sr, t0, t1, f0, f1):
+    s = a[int(t0*sr):int(t1*sr)]
+    F = np.fft.rfft(s * np.hanning(len(s)))
+    f = np.fft.rfftfreq(len(s), 1/sr)
+    m = (f >= f0) & (f < f1)
+    return 20*np.log10(np.sqrt((np.abs(F[m])**2).sum())/len(s)*2 + 1e-12)
+```
+
+Bands that suffice: 60–250, 250–700, 700–1500, 1500–3500, 3500–8000. Comparing windows of
+different length requires normalizing for duration (`− 10*log10(dur_a/dur_b)`), or the longer
+segment looks louder just for being longer. **If the element wins more than ~6 dB in the band
+holding its fundamentals, it is audible. Do not turn it up.**
+
+### Derive gain from the file that exists, not from the buffer you produced
+
+A companion case in the same job: the author of a sting reported his file peaking at −3 dBTP
+and the measurement of the delivered file said −6.2. Both were right about different things —
+he measured the **mono** buffer he handed the encoder, and an ffmpeg mono→stereo upmix
+**preserves power and spreads −3 dB per channel**. Between the buffer and the file there is a
+resample, a channel change and a quantization, and any of the three moves the peak.
+
 ## Target the platform
 
 Short-form platforms normalize to about **−14 LUFS**. Landing the final mix between −14 and

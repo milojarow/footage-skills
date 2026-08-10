@@ -95,6 +95,48 @@ over a static shot barely varies; an animated outro does. But **a static logo ca
 either**, so variance alone gives false negatives — which is why the rule is to LOOK, not to
 measure.
 
+### A take handed to you "to edit" may already BE a finished edit
+
+Prove it before running the cutter. One measured case: a clip arrived "to have its silences
+cut", and the timestamped transcript showed 1.22 s of gap at the head, 3.22 s at the tail and a
+1.00 s gap mid-sentence — textbook raw take with dead air. It was nothing of the sort. Pulling
+frames showed the 1.22 s head was a **designed opening shot** with a whip transition, the 3.22 s
+tail was an **animated brand card**, and the piece already carried **karaoke captions burned
+into the pixels**. The only genuinely cuttable gap was the 1.00 s one, worth 0.53 s recovered
+out of 28.7 s — 1.9% of the runtime.
+
+**Why this breaks gap cutters specifically.** A protected-range flag (`--keep-gap START-END`)
+guards deliberate pauses *between words*. The edges are not gaps between words: they are the
+head before the first word and the tail after the last one, and the typical implementation
+trims them unconditionally:
+
+```python
+segmentStart = max(0, keptWords[0].start - pad)           # ALWAYS trims the head
+segments.append((segmentStart, min(dur, prevEnd + pad)))  # ALWAYS trims the tail
+```
+
+Neither line consults the protected ranges. Run the tool as-is on a piece like that and it
+deletes the opening AND the brand card — no error, no warning, success verdict. **Treat the
+head and the tail as protected by default**, and clamp them against the protected ranges the
+same way the interior gaps are.
+
+**The pre-flight check.** A contact sheet of ~10 frames spread across the piece, looked at with
+your eyes. It takes seconds and answers three things the transcript cannot:
+
+1. Are the head and the tail black/static, or are they content?
+2. Are there already burned-in captions? (If so you cannot add yours without stacking them, and
+   any cut has to land where no caption is on screen.)
+3. Where does the subject sit in the frame? (That decides where any graphic can go.)
+
+**Cutting with burned-in captions present:** put the cut inside the blank window between two
+caption groups. Find it by sampling frames every 0.2 s around the gap — if there is different
+text on screen on either side, the cut produces a subtitle jump that no linter sees.
+
+**Short rule:** the transcript tells you where there is no voice. It does not tell you where
+there is no video. Before treating a gap as dead air, look at the frame — above all in the first
+and last second, which is exactly where openings and brand cards live, and exactly where the
+cutters have no guard.
+
 **The general shape:** a detector that measures one dimension declares healthy whatever is
 broken in the dimension it does not watch, and declares it with total confidence. The gap
 detector hears and does not see; a linter validates structure and does not see; a screenshot

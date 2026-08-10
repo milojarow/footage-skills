@@ -189,6 +189,7 @@ and fixes: [reference/silent-failures.md](reference/silent-failures.md).
 | [reference/captions-karaoke.md](reference/captions-karaoke.md) | Caption windows, word spacing, the karaoke highlight, remapping to the cut |
 | [reference/overlays-and-pip.md](reference/overlays-and-pip.md) | Composition layout, safe zones, PIP transform math, z-order |
 | [reference/audio-levels.md](reference/audio-levels.md) | Measuring loudness and deriving every gain from it |
+| [reference/joining-pieces.md](reference/joining-pieces.md) | Gluing a sting, end card or second render onto the finished piece without a visible seam |
 | [reference/silent-failures.md](reference/silent-failures.md) | A render "worked" but looks or sounds wrong |
 
 ## Common mistakes

@@ -58,6 +58,49 @@ if start - previous_end > threshold and not protected:
     ...cut...
 ```
 
+## The gap detector hears; it cannot see
+
+The silence detector works on **audio** — gaps between words with timestamps. It never looks at
+the **image**. That makes it blind to a common and expensive case:
+
+**Footage that already went through an editor usually carries a brand outro glued to the end —
+logo, card, contact line. That outro is silent.** To the detector it is indistinguishable from
+dead air, and it cuts the whole thing without a single error.
+
+Measured case: a 24.07 s take, last word at 20.80. The detector reported "tail: 3.26 s of
+silence". Cutting it looked obviously correct — and deleted the closing brand card, which ran
+from 21.15 to 24.06.
+
+The twin case lives at the head: 1.10 s of "silence" before the first word can be an opening
+transition (fade, page-peel, wipe). In that same take the head *was* cut, but for a reason the
+detector could not know: looking at the frames showed a stray mouse cursor left in by whoever
+exported it. The frames decided the cut on evidence, not on a threshold.
+
+**Rule: before cutting ANY span the detector marks as silence — above all the first and the
+last — extract frames from that span and look at them.**
+
+```bash
+for t in 21.2 22.0 23.0 23.9; do
+  ffmpeg -y -v error -ss $t -i in.mp4 -frames:v 1 -vf scale=200:-2 tail-$t.jpg
+done
+ffmpeg -y -v error -i tail-21.2.jpg -i tail-22.0.jpg -i tail-23.0.jpg -i tail-23.9.jpg \
+  -filter_complex "[0][1][2][3]hstack=inputs=4" tail-sheet.jpg
+```
+
+A four-frame contact sheet answers it in five seconds. If there is content, the span is not dead
+air — it is a piece, and keeping or dropping it is the operator's call, not the threshold's.
+
+Cheap to automate if you want it: mean luminance and its variance across the span. Real dead air
+over a static shot barely varies; an animated outro does. But **a static logo card does not vary
+either**, so variance alone gives false negatives — which is why the rule is to LOOK, not to
+measure.
+
+**The general shape:** a detector that measures one dimension declares healthy whatever is
+broken in the dimension it does not watch, and declares it with total confidence. The gap
+detector hears and does not see; a linter validates structure and does not see; a screenshot
+sees and does not hear. When a check says "there is nothing here", ask **in which dimension** it
+looked.
+
 ## Filler words by language
 
 The list a provider strips by default is **English only**:

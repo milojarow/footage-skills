@@ -87,6 +87,10 @@ occasionally clips the tail of a word, and re-rendering costs more than reading 
 air — the pause before a punchline is usually the *longest* silence in the take and the first
 thing an aggressive threshold eats. See [reference/cut-and-transcript.md](reference/cut-and-transcript.md).
 
+**Look at the frames of every span you are about to delete.** The detector hears; it does not
+see. A silent tail is often a brand outro and a silent head is often an opening transition —
+both get cut with no error at all. Contact sheet first: [reference/cut-and-transcript.md](reference/cut-and-transcript.md).
+
 ### 4 — Remap every timestamp onto the cut timeline
 
 Once frames are removed, the original word timings are wrong. Every caption, card and cue

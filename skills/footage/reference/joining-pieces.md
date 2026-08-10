@@ -61,7 +61,82 @@ which the demuxer tolerates by taking the first one's.
 
 `has_b_frames=0` on both helps: with no B-frames there is no reordering across the splice.
 
-## 4 — The re-encode
+## 4 — 🔴 The frame that decides the join is the LAST one, and it is measured, not judged
+
+When the incoming piece exists in a light and a dark variant, the one that goes is whichever
+does not flash against the **last frame of the edit**. That decision is a scalar:
+
+```bash
+# last frame of the edit
+ffmpeg -v error -sseof -0.05 -i edit.mp4 -frames:v 1 -y /tmp/last.png
+# first frame of the piece being glued on
+ffmpeg -v error -i piece.mp4 -frames:v 1 -y /tmp/first.png
+python3 -c "
+from PIL import Image; import numpy as np
+for f in ['/tmp/last.png','/tmp/first.png']:
+    print(f, np.asarray(Image.open(f).convert('L')).mean())"
+```
+
+Decision rule, measured on a real case:
+
+| Mean-luminance difference (0–255) | Verdict |
+|---|---|
+| < ~20 | hard cut, reads clean |
+| 20 – 60 | hard cut acceptable; dissolve if you want it |
+| > 60 | **no good variant exists** → dissolve |
+
+### The mistake that makes this necessary
+
+"Does your edit close light or dark?" invites a description of the **scene**, and the scene is
+not the number. A sunlit shot with a subject, shadows and foliage averages **112/255** even with
+its highlights pinned; a flat brand card averages **246**. Answering "light, a park in full sun"
+led to picking the light variant, and the result jumped **+127 of mean luminance in ONE frame** —
+half the scale, and it reads as a flash.
+
+    piece A   last frame 245.5  →  first frame of the sting 245.8   jump   0.3
+    piece B   last frame 112.5  →                           244.4   jump 131.9
+
+No codec improvement fixes 131.9. And measured afterwards, neither variant worked for piece B:
+133.3 against the light one, 93.3 against the dark. **A mid-light close is not fixed by picking a
+variant — it is fixed with a dissolve.**
+
+**The general shape:** a question that can be answered with a scalar must not be answered with
+an adjective, even when the asker accepts the adjective. In the measured case the number had
+already been written down twenty minutes earlier and the impression was given instead. When you
+ask anyone — person or agent — for a datum an irreversible decision depends on, **ask for the
+command, not for the judgement.**
+
+### The dissolve
+
+8–10 frames spread a jump of ~130 into ~16 per frame, which reads as a dissolve rather than a
+cut. Beyond ~10 it starts eating the incoming piece's own opening animation, so the ceiling is
+set by the content, not by taste.
+
+Verify frame by frame, not by eye:
+
+```python
+raw = subprocess.run(['ffmpeg','-v','error','-ss',str(t0),'-t','0.8','-i',V,
+                      '-vf','scale=192:-2,format=gray','-f','rawvideo','-'],capture_output=True).stdout
+n = 192*340; prev = None
+for i in range(len(raw)//n):
+    m = np.frombuffer(raw[i*n:(i+1)*n], dtype=np.uint8).astype(float).mean()
+    if prev is not None: print(f"{t0+i/30:.3f}  {m:6.1f}  {m-prev:+6.1f}")
+    prev = m
+```
+
+Healthy output: the delta column climbs evenly, with no step that stands out.
+
+### Two traps in the method
+
+- **Do not run it on the ALREADY-finished piece** if that one ends in black: it returns 0.0,
+  which sends you to the dark variant — a correct answer to a question you did not ask. Measure
+  the last frame of part A, before gluing anything.
+- **Snapshot directories are not cleared between runs** by most composition tooling. PNGs from a
+  previous run are still there, and a script globbing them mixes old timestamps with new ones —
+  that produced a "black" frame that did not exist and sent a healthy composition to be debugged.
+  Delete the snapshot directory before measuring.
+
+## 5 — The re-encode
 
 Placing the incoming piece *inside* the composition re-encodes it. A sting that is mostly flat
 gradient is the worst case for a compressor (banding). If it must be re-encoded, raise quality

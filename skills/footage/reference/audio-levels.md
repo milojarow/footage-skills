@@ -193,3 +193,56 @@ ffmpeg -hide_banner -nostats -i "$FILE" \
 Run it on the voice-only track and on the final mix. More low-band energy in the final is the
 bed. On one production: voice-only −33.8 dB, final −31.0 dB — 2.8 dB of bed, present and well
 under the speech.
+
+## A number that does not move proves nothing — look for a marker that RISES
+
+Adding a 2.4 s sting over a 26.75 s mix (voice + bed) left the file's aggregate metrics
+**identical** before and after:
+
+    before   mean −15.9 dB   max −0.6 dB   I −13.3 LUFS
+    after    mean −15.9 dB   max −0.6 dB   I −13.3 LUFS
+
+Read that way you conclude "the filter never applied, the layer never landed" and go debug an
+`amix` that was perfect. The cause is arithmetic, not a fault: **the peak and the programme
+integrated live in another section** (the 20 s of speech), so a short, moderate layer in the last
+6 s cannot move either of them, and a 26 s mean does not notice 2.4 s at −27 dB.
+
+**The verification that does prove it** — a marker that has to go **up**, scoped to the window
+and the band the new layer lives in:
+
+```python
+raw = subprocess.run(['ffmpeg','-v','error','-ss',str(t0),'-t',str(dur),'-i',mix,
+                      '-ac','1','-ar','48000','-f','f32le','-'], capture_output=True).stdout
+x = np.frombuffer(raw, dtype=np.float32)
+X = np.abs(np.fft.rfft(x*np.hanning(len(x))))**2
+f = np.fft.rfftfreq(len(x), 1/48000)
+for lo, hi in [(0,300),(300,1000),(1000,3000)]:
+    m = (f >= lo) & (f < hi); print(lo, hi, 100*X[m].sum()/X.sum())
+```
+
+In the measured case the sting's band (300 Hz–3 kHz) went from **5.3% → 17.6%** inside that
+window. That is proof. An unchanged number is not.
+
+**Corollary:** run the same measurement on the **rendered MP4**, not only on the intermediate
+audio file — it is the only way to know the layer survived the render.
+
+### A three-minute average does not describe two seconds
+
+Before mixing, the question was whether the sting (300–3000 Hz) would fight the music bed. The
+answer "yes, the music lives in the upper mids" was true **for the whole track** and false for
+the 2.4 s that mattered: measured in that exact window, the bed was **94.7% below 300 Hz** — a
+low-pulse section with no melody. Zero overlap.
+
+Measure **the window the layer falls in**, never the track average. And derive the level by
+comparing energies **inside the shared band**, not global levels:
+
+    bed in 300–3000 Hz, in that window    −30.1 dB
+    sting at gain 1.0, in its band        −27.8 dB   → +2.3 dB over the bed
+
+### Headroom is a separate question from masking
+
+Two different questions, answered separately. In that case the sting was attenuated −3 dB
+**not** because it covered anything, but because the mix already peaked at −0.6 dBFS and adding
+a layer peaking at −6 dB risked clipping. With the −3 dB plus an `alimiter=limit=0.977`
+(≈ −0.2 dBFS) the final peak landed at −0.8 dB. Conflating the two leads to attenuating for the
+wrong reason and to missing the real clipping.

@@ -10,7 +10,7 @@
       "name": "footage-skills",
       "source": "./",
       "description": "Turn real recorded footage \u2014 a phone take, a webcam recording, a screen capture \u2014 into a finished vertical short: cut silences and filler words from the take, word-synced karaoke captions, graphic overlays and a picture-in-picture moment where a graphic owns the frame, and a music bed mixed by measurement instead of by feel. Carries the corpus of failures that produce no error at all: audio elements that render silent, panels that animate perfectly while invisible, captions drawn on top of each other, beds louder than the speaker, and volumes clamped without a warning. Not for videos built from AI-generated imagery.",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "author": {
         "name": "milojarow",
         "url": "https://github.com/milojarow"

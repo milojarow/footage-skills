@@ -63,6 +63,89 @@ voice to −16 moves it 10 LU. Every level derived from the old number is now 10
 **Recompute after any change to the voice**, and keep the voice measurement in one named
 constant so there is a single place to update.
 
+## "The take has no audio" — separate ABSENT from BURIED before re-shooting
+
+An audio stream being present does not prove anything was captured, and a take reported as
+silent has three different causes that look identical in a player. Measure before asking for
+the shot again.
+
+**1 — Does the stream exist at all?**
+
+```bash
+ffprobe -v error -show_entries stream=codec_type,channels -of default=nw=1 in.mp4
+```
+
+No stream means the fault is the capture command, not the room.
+
+**2 — How loud is what is there?**
+
+```bash
+ffmpeg -i in.mp4 -map 0:a -af volumedetect -f null -
+```
+
+A healthy mic take reads roughly `mean_volume` −25 dB, `max_volume` 0 to −3 dB. A `max_volume`
+around −43 dB with a `mean_volume` around −78 dB is **not** digital silence — it is real signal
+buried under a misconfigured gain stage, and it is recoverable.
+
+**3 — Profile it second by second (peak + RMS).** Only the profile separates "quiet room" from
+"low gain" from "a gate deleted the voice". Burst structure — peaks near −50 dB separated by
+stretches at exactly −99 dB — means there *was* speech and there *was* a gate. Flat noise with
+no structure means there was nothing to begin with.
+
+```bash
+ffmpeg -v error -i in.mp4 -map 0:a -ac 1 -ar 8000 -f s16le - 2>/dev/null | python3 -c "
+import sys,struct,math
+d=sys.stdin.buffer.read(); n=len(d)//2; s=struct.unpack('<%dh'%n,d[:n*2]); sr=8000
+db=lambda v: -99 if v<=0 else 20*math.log10(v/32768)
+for i in range(0,n,sr):
+    ch=s[i:i+sr]
+    if not ch: break
+    pk=max(abs(x) for x in ch); rms=math.sqrt(sum(x*x for x in ch)/len(ch))
+    print('t=%02ds peak %6.1f rms %6.1f %s'%(i//sr,db(pk),db(rms),'#'*int(max(0,(db(rms)+99)/2.5))))
+"
+```
+
+### Exactly −99 dB is a noise suppressor's signature, and that part does not come back
+
+When the capture chain runs through an RNNoise-style suppressor (LADSPA
+`noise_suppressor_mono`, control "VAD Threshold (%)"), a low-gain input stops the VAD from
+recognising speech and it is sent to **digital zero**. That is erasure at the source, not
+attenuation. Amplifying afterwards recovers only the stretches the VAD let through; the
+stretches at −99 dB are gone permanently. Measured on one take: 22 s recorded, 14 s emitted at
+exactly −99 dB.
+
+The practical consequence: **with a suppressor in the chain, low gain does not degrade the
+audio proportionally — it makes it discontinuous.** That is why a take like this gets reported
+as "there is no audio" rather than "it sounds quiet".
+
+### Rescue the part that survived
+
+```bash
+ffmpeg -i in.mp4 -c:v copy \
+  -af "volume=38dB,afftdn=nr=18:nf=-45,speechnorm=e=6.25:r=0.00025:l=1,alimiter=limit=0.95" \
+  -c:a aac -b:a 160k out.mp4
+```
+
+The order is load-bearing: raise → denoise → normalize speech → limit. Denoising before raising
+does nothing (the noise sits under the analysis floor), and normalizing without a limiter last
+clips the consonants.
+
+Verify the rescue with the **same per-second profile**, not by ear: the criterion is that the
+speech bursts land between −45 and −25 dB RMS.
+
+### Gain stages are several and they add up
+
+Before blaming the recorder, enumerate every stage between the microphone and the file. On
+Linux with PipeWire there are at least three and only one of them is visible in the mixer UI:
+
+- ALSA hardware (`amixer -c 0` → `Capture`, `Mic Boost`)
+- the PipeWire node/route volume (persisted by WirePlumber)
+- filter-chain processing (suppressor, VAD)
+
+⚠️ **Mind the scale:** `wpctl get-volume` reports **cubic** and `pactl` reports **linear**.
+`0.20` in wpctl is `0.008` linear — **−42 dB**, not −14 dB. Reading "20%" as a mild attenuation
+is exactly why nobody suspects that stage.
+
 ## Cleaning the voice
 
 Two operations, in this order:

@@ -65,6 +65,11 @@ ffmpeg -v error -i input.mp4 -frames:v 1 -y /tmp/probe.png   # then check the PN
 
 Getting this wrong means designing a whole composition for the wrong aspect ratio.
 
+**A take reported as "no audio" gets measured, not re-shot.** An existing audio stream proves
+nothing was captured, and buried signal, a quiet room and a gate that erased the voice look
+identical in a player — only one of the three is recoverable. Triage:
+[reference/audio-levels.md](reference/audio-levels.md).
+
 ### 2 — Transcribe with word-level timestamps
 
 Ask the STT provider for **filler words included**. This reads backwards and matters:
@@ -188,7 +193,7 @@ and fixes: [reference/silent-failures.md](reference/silent-failures.md).
 | [reference/cut-and-transcript.md](reference/cut-and-transcript.md) | Cutting silences and fillers; protecting deliberate pauses; the Spanish filler trap |
 | [reference/captions-karaoke.md](reference/captions-karaoke.md) | Caption windows, word spacing, the karaoke highlight, remapping to the cut |
 | [reference/overlays-and-pip.md](reference/overlays-and-pip.md) | Composition layout, safe zones, PIP transform math, z-order |
-| [reference/audio-levels.md](reference/audio-levels.md) | Measuring loudness and deriving every gain from it |
+| [reference/audio-levels.md](reference/audio-levels.md) | Measuring loudness and deriving every gain from it; diagnosing a take reported as having no audio |
 | [reference/joining-pieces.md](reference/joining-pieces.md) | Gluing a sting, end card or second render onto the finished piece without a visible seam |
 | [reference/silent-failures.md](reference/silent-failures.md) | A render "worked" but looks or sounds wrong |
 

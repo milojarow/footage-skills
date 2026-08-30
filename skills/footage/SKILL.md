@@ -29,6 +29,11 @@ render to completion, and still ship a silent audio track, an empty panel, or a 
 than the speaker. Every defect in [reference/silent-failures.md](reference/silent-failures.md)
 came from a run where the tooling reported success. **Measure and look; do not assume.**
 
+**A piece that mixes real footage with an AI-generated background is normal, not an edge
+case** — for deciding which side is authoritative, checking separability, and removing a
+baked-in overlay without a fixed rectangle, see
+[reference/mixed-real-and-generated.md](reference/mixed-real-and-generated.md).
+
 ## When to use
 
 - A recorded take (phone, webcam, screen capture, interview) that needs to become a short.
@@ -195,6 +200,7 @@ and fixes: [reference/silent-failures.md](reference/silent-failures.md).
 | [reference/overlays-and-pip.md](reference/overlays-and-pip.md) | Composition layout, safe zones, PIP transform math, z-order |
 | [reference/audio-levels.md](reference/audio-levels.md) | Measuring loudness and deriving every gain from it; diagnosing a take reported as having no audio |
 | [reference/joining-pieces.md](reference/joining-pieces.md) | Gluing a sting, end card or second render onto the finished piece without a visible seam |
+| [reference/mixed-real-and-generated.md](reference/mixed-real-and-generated.md) | Footage combined with an AI-generated background — authoritative side, separability, removing a baked-in overlay per frame |
 | [reference/silent-failures.md](reference/silent-failures.md) | A render "worked" but looks or sounds wrong |
 
 ## Common mistakes

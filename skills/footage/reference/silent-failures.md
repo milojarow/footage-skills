@@ -160,3 +160,32 @@ display matrix. Phone footage is commonly stored 1920×1080 with `rotation=90`.
 
 **Fix:** decode a frame and measure that. Everything downstream — canvas size, safe zones,
 caption position — depends on getting this right the first time.
+
+---
+
+## 11. `pw-record` drops audio when the reader stalls on a long capture
+
+`pw-record` has no read-ahead buffer to absorb its consumer falling behind. If whatever is
+reading its output stalls — a screen recording running alongside a video call and screen
+share is a common way to saturate the CPU enough to do this — the audio for exactly that gap
+is gone. No warning, non-zero exit, or malformed file; the WAV is valid and just shorter than
+the take actually was. Real 40–100 minute captures came out 1.4–3.7% short (up to ~230 s
+missing over the recording).
+
+**Symptom:** the file's duration (`ffprobe`) measures shorter than the wall-clock length of
+the recording. If two separately-captured tracks are later combined with `amerge`, this shows
+up as progressive desync instead of an error — `amerge` silently trims to the shorter input,
+so a dropped gap in one track reads as "the channels drift apart over time," not as a failure.
+
+**Fix:** for anything long-running or likely to run under CPU contention, capture with
+`ffmpeg -f pulse -i <source>` instead of `pw-record`. ffmpeg's PulseAudio compatibility layer
+buffers enough to absorb a stalled reader.
+
+**Two traps when verifying this yourself:**
+- Comparing the sizes or durations of two WAV files while both are still being written lies —
+  each writer flushes on its own cadence, and what looks like a multi-second gap between two
+  live captures can be a genuine sub-0.1 s difference in start time once both are stopped and
+  measured at rest.
+- `pactl suspend-sink` does not stop a capture already reading that sink's monitor, so it
+  cannot simulate a stalled reader. Suspend the actual reading process instead (`kill -STOP`)
+  to reproduce the drop.

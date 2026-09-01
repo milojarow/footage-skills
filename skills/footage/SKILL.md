@@ -190,6 +190,7 @@ and fixes: [reference/silent-failures.md](reference/silent-failures.md).
 | Motion stutters on slow moves | Animating `left`/`top`/`width`/`height` instead of transforms |
 | Output is sideways | Read the container's coded size instead of the decoded frame |
 | A quoted word disappears from a sentence | A filler-word list that matched a real word |
+| A long capture's audio track is a bit shorter than the video / two tracks drift apart when merged | `pw-record` dropped audio when its reader stalled under load — capture long/CPU-contended sessions with `ffmpeg -f pulse` instead |
 
 ## Reference files
 
